@@ -54,6 +54,7 @@ def get_ydl_opts(format_type, output_path, chat_id):
         'n_threads': 8,
         'retries': 5,
         'fragment_retries': 5,
+        'cookiefile': './cookies.txt', # Use cookie file for authentication
     }
     
     if format_type == 'mp3':
@@ -76,8 +77,7 @@ def get_ydl_opts(format_type, output_path, chat_id):
             'merge_output_format': 'mp4',
             'recode_video': 'mp4',
             'prefer_ffmpeg': True,
-            # Render's default environment should have FFmpeg in PATH
-            'ffmpeg_location': 'ffmpeg',
+            'ffmpeg_location': 'ffmpeg', # Default path for Render
         }
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -202,7 +202,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         user_data[chat_id]['progress_message_id'] = progress_message.message_id
         
-        # Start download using asyncio.to_thread
         await download_media(context, chat_id)
 
 async def download_media(context, chat_id):
@@ -351,12 +350,12 @@ async def another_download_handler(update: Update, context: ContextTypes.DEFAULT
 
 def main():
     """Start the bot."""
+    if not BOT_TOKEN:
+        logger.error("BOT_TOKEN environment variable not set. Please set it to your bot's token.")
+        sys.exit(1)
+        
     application = Application.builder().token(BOT_TOKEN).build()
-    
-    # We need a webhook for render.com deployment, but for a bot like this
-    # with a polling loop, we can just start the polling. Render will
-    # handle the web service configuration.
-    
+
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_url))
